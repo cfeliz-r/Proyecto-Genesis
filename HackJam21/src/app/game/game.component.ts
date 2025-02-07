@@ -24,6 +24,9 @@ export class GameComponent implements OnInit {
   { x: 0, y: 0 }, { x: 1, y: 1 }, { x: 2, y: 2 }
 ];
 
+//en teroria deberia de funcionar, usando este comando para añador las paredes ng.getComponent(document.querySelector('app-game')).addWall(4, 4);
+//con estp vamos a conseguir diseñar mapas a nuestro gusto
+
 
   constructor() {}
 
