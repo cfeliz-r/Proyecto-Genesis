@@ -1,4 +1,3 @@
-// src/app/components/game/game.component.ts
 import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import * as THREE from 'three';
 
@@ -18,11 +17,13 @@ export class GameComponent implements OnInit {
   private stars: THREE.Points | null = null;
   private walls: THREE.Mesh[] = [];
   private collisionRadius = 0.6;
-  private wallPositions: { x: number, y: number }[] = [
-    { x: -2, y: 1 }, { x: -1, y: 1 }, { x: 0, y: 1 },
-    { x: 2, y: -1 }, { x: 1, y: -1 }, { x: 0, y: -1 },
-    { x: -2, y: -2 }, { x: -1, y: -2 }, { x: 1, y: 2 }, { x: 2, y: 2 },
-  ];
+ private wallPositions: { x: number, y: number }[] = [
+  { x: -3, y: 2 }, { x: -2, y: 2 }, { x: -1, y: 2 },
+  { x: 1, y: -1 }, { x: 2, y: -1 }, { x: 3, y: -1 },
+  { x: -3, y: -3 }, { x: -2, y: -3 }, { x: -1, y: -3 },
+  { x: 0, y: 0 }, { x: 1, y: 1 }, { x: 2, y: 2 }
+];
+
 
   constructor() {}
 
@@ -61,7 +62,7 @@ export class GameComponent implements OnInit {
   }
 
   private createWalls() {
-    const wallGeometry = new THREE.BoxGeometry(1, 1, 0);
+    const wallGeometry = new THREE.BoxGeometry(1, 1, 1);
     const wallMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
     this.wallPositions.forEach(pos => this.addWall(pos.x, pos.y, wallGeometry, wallMaterial));
   }
@@ -94,7 +95,7 @@ export class GameComponent implements OnInit {
     const geometry = new THREE.CylinderGeometry(0.3, 0.3, 0.3, 32);
     const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
     this.oxygenTank = new THREE.Mesh(geometry, material);
-    this.oxygenTank.position.set(1, 1, 0);
+    this.oxygenTank.position.set(0, 2, 0);
     this.scene.add(this.oxygenTank);
   }
 
