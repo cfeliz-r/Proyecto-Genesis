@@ -17,6 +17,7 @@ export class GameComponent implements OnInit {
   private oxygenTank!: THREE.Mesh;
   private stars: THREE.Points | null = null;
   private walls: THREE.Mesh[] = [];
+  private collisionRadius = 0.6; // Ajustado para mejorar la detección de colisiones
 
   constructor() {}
 
@@ -121,7 +122,10 @@ export class GameComponent implements OnInit {
   }
 
   private isColliding(x: number, y: number): boolean {
-    return this.walls.some(wall => Math.abs(wall.position.x - x) < 0.5 && Math.abs(wall.position.y - y) < 0.5);
+    return this.walls.some(wall => {
+      const distance = Math.sqrt(Math.pow(wall.position.x - x, 2) + Math.pow(wall.position.y - y, 2));
+      return distance < this.collisionRadius; // Mejora la detección de colisión
+    });
   }
 
   private checkWinCondition() {
