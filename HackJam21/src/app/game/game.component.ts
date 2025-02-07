@@ -13,15 +13,17 @@ export class GameComponent implements OnInit {
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
-  private players: THREE.Mesh[] = [];
+  private players: { mesh: THREE.Mesh, controls: any }[] = [];
   private oxygenTank!: THREE.Mesh;
   private stars: THREE.Points | null = null;
+  private walls: THREE.Mesh[] = [];
 
   constructor() {}
 
   ngOnInit(): void {
     this.initThreeJS();
     this.createStars();
+    this.createWalls();
     this.createPlayers();
     this.createOxygenTank();
     this.animate();
@@ -29,7 +31,7 @@ export class GameComponent implements OnInit {
 
   private initThreeJS() {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x000000); // Fondo negro simulando el espacio
+    this.scene.background = new THREE.Color(0x000000);
 
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     this.camera.position.z = 10;
@@ -56,20 +58,36 @@ export class GameComponent implements OnInit {
     this.scene.add(this.stars);
   }
 
+  private createWalls() {
+    const wallGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const wallMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
+    const wallPositions = [
+      { x: -2, y: 1 }, { x: -1, y: 1 }, { x: 0, y: 1 },
+      { x: 2, y: -1 }, { x: 1, y: -1 }, { x: 0, y: -1 },
+      { x: -2, y: -2 }, { x: -1, y: -2 }, { x: 1, y: 2 }, { x: 2, y: 2 }
+    ];
+
+    wallPositions.forEach(pos => {
+      const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+      wall.position.set(pos.x, pos.y, 0);
+      this.scene.add(wall);
+      this.walls.push(wall);
+    });
+  }
+
   private createPlayers() {
     const geometry = new THREE.SphereGeometry(0.5, 32, 32);
-    const material1 = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-    const material2 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-
-    const player1 = new THREE.Mesh(geometry, material1);
+    
+    const player1 = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x0000ff }));
     player1.position.set(-3, 0, 0);
     this.scene.add(player1);
-    this.players.push(player1);
-
-    const player2 = new THREE.Mesh(geometry, material2);
+    
+    const player2 = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0xff0000 }));
     player2.position.set(3, 0, 0);
     this.scene.add(player2);
-    this.players.push(player2);
+    
+    this.players.push({ mesh: player1, controls: { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' } });
+    this.players.push({ mesh: player2, controls: { up: 'w', down: 's', left: 'a', right: 'd' } });
   }
 
   private createOxygenTank() {
@@ -83,24 +101,32 @@ export class GameComponent implements OnInit {
   @HostListener('document:keydown', ['$event'])
   handleKeyDown(event: KeyboardEvent) {
     console.log(`Key pressed: ${event.key}`);
-    const speed = 0.2;
+    const speed = 0.5;
+    
+    this.players.forEach(player => {
+      let newX = player.mesh.position.x;
+      let newY = player.mesh.position.y;
 
-    if (event.key === 'ArrowUp') this.players[0].position.y += speed;
-    if (event.key === 'ArrowDown') this.players[0].position.y -= speed;
-    if (event.key === 'ArrowLeft') this.players[0].position.x -= speed;
-    if (event.key === 'ArrowRight') this.players[0].position.x += speed;
+      if (event.key === player.controls.up) newY += speed;
+      if (event.key === player.controls.down) newY -= speed;
+      if (event.key === player.controls.left) newX -= speed;
+      if (event.key === player.controls.right) newX += speed;
 
-    if (event.key === 'w') this.players[1].position.y += speed;
-    if (event.key === 's') this.players[1].position.y -= speed;
-    if (event.key === 'a') this.players[1].position.x -= speed;
-    if (event.key === 'd') this.players[1].position.x += speed;
+      if (!this.isColliding(newX, newY)) {
+        player.mesh.position.set(newX, newY, 0);
+      }
+    });
 
     this.checkWinCondition();
   }
 
+  private isColliding(x: number, y: number): boolean {
+    return this.walls.some(wall => Math.abs(wall.position.x - x) < 0.5 && Math.abs(wall.position.y - y) < 0.5);
+  }
+
   private checkWinCondition() {
     this.players.forEach((player, index) => {
-      const distance = player.position.distanceTo(this.oxygenTank.position);
+      const distance = player.mesh.position.distanceTo(this.oxygenTank.position);
       if (distance < 0.5) {
         alert(`¡Jugador ${index + 1} ha ganado!`);
       }
@@ -110,7 +136,7 @@ export class GameComponent implements OnInit {
   private animate() {
     requestAnimationFrame(() => this.animate());
     if (this.stars) {
-      this.stars.rotation.y += 0.0005; // Efecto sutil de parpadeo
+      this.stars.rotation.y += 0.0005;
     }
     this.renderer.render(this.scene, this.camera);
   }
