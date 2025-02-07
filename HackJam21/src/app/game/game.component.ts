@@ -17,7 +17,7 @@ export class GameComponent implements OnInit {
   private oxygenTank!: THREE.Mesh;
   private stars: THREE.Points | null = null;
   private walls: THREE.Mesh[] = [];
-  private collisionRadius = 0.6; // Ajustado para mejorar la detección de colisiones
+  private collisionRadius = 0.6; // Mejora la detección de colisiones
 
   constructor() {}
 
@@ -115,6 +115,8 @@ export class GameComponent implements OnInit {
 
       if (!this.isColliding(newX, newY)) {
         player.mesh.position.set(newX, newY, 0);
+      } else {
+        console.log(`Colisión detectada: No se permite el movimiento en (${newX}, ${newY})`);
       }
     });
 
@@ -124,7 +126,7 @@ export class GameComponent implements OnInit {
   private isColliding(x: number, y: number): boolean {
     return this.walls.some(wall => {
       const distance = Math.sqrt(Math.pow(wall.position.x - x, 2) + Math.pow(wall.position.y - y, 2));
-      return distance < this.collisionRadius; // Mejora la detección de colisión
+      return distance < this.collisionRadius + 0.3; // Se ajusta el buffer de colisión
     });
   }
 
