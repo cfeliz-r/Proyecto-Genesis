@@ -74,6 +74,7 @@ export class GameComponent implements OnInit {
     if (!geometry) geometry = new THREE.BoxGeometry(1, 1, 1);
     if (!material) material = new THREE.MeshBasicMaterial({ color: 0x888888 });
     
+    
     const wall = new THREE.Mesh(geometry, material);
     wall.position.set(x, y, 0);
     this.scene.add(wall);
@@ -81,7 +82,27 @@ export class GameComponent implements OnInit {
     this.wallPositions.push({ x, y });
     console.log(`Añadida pared en (${x}, ${y})`);
   }
-
+  deleteWall(x: number, y: number) {
+    // Buscar la pared en la lista de paredes
+    const wallIndex = this.walls.findIndex(wall => 
+      wall.position.x === x && wall.position.y === y
+    );
+  
+    if (wallIndex !== -1) {
+      // Eliminar la pared de la escena
+      this.scene.remove(this.walls[wallIndex]);
+  
+      // Eliminar la pared del array de paredes
+      this.walls.splice(wallIndex, 1);
+  
+      // Eliminar la posición de la pared del array de posiciones
+      this.wallPositions = this.wallPositions.filter(pos => !(pos.x === x && pos.y === y));
+  
+      console.log(`Pared eliminada en (${x}, ${y})`);
+    } else {
+      console.warn(`No se encontró una pared en (${x}, ${y})`);
+    }
+  }
   private createPlayers() {
     const geometry = new THREE.SphereGeometry(0.5, 32, 32);
     const player1 = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x0000ff }));
