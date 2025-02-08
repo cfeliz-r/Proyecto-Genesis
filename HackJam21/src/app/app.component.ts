@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { GameComponent } from './game/game.component';
+import { LevelNavbarComponent } from "./level-navbar/level-navbar.component";
 
 @Component({
   selector: 'app-root',

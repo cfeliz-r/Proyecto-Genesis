@@ -1,0 +1,8 @@
+<nav class="navbar">
+    @for (level of levels; track level) {
+      <button (click)="selectLevel(level)">
+        Nivel {{ level }}
+      </button>
+    }
+  </nav>
+  

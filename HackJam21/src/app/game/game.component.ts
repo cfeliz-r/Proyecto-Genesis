@@ -1,10 +1,12 @@
 import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import * as THREE from 'three';
+import { LevelNavbarComponent } from "../level-navbar/level-navbar.component";
 
 @Component({
   selector: 'app-game',
   templateUrl: './game.component.html',
-  styleUrls: ['./game.component.css']
+  styleUrls: ['./game.component.css'],
+  imports: [LevelNavbarComponent]
 })
 export class GameComponent implements OnInit {
   @ViewChild('gameCanvas', { static: true })
@@ -20,7 +22,7 @@ export class GameComponent implements OnInit {
     currentTextureIndex: number,
     direction: string
   };
-  private oxygenTank!: THREE.Mesh;
+  private oxygenTanks: THREE.Mesh[] = [];
   private stars: THREE.Points | null = null;
   private walls: THREE.Mesh[] = [];
   private collisionRadius = 0.8;
@@ -112,29 +114,94 @@ export class GameComponent implements OnInit {
   
   
   // Mapa con un solo jugador (P)
-  private mapData: string[] = [
-    "1111111111111111111111111111111111111111111111111111111111111111",
-    "1000000000000000000000000000000000000000000000000000000000000001",
-    "1000111100001100001111000110000110011111100001111000110000110001",
-    "100000000000000O000000000000000000000000O00000000000000000000001",
-    "1000111100001110000111000110000110011111100001111000110000110001",
-    "1000000000000000000000000000000000010000000000000000000000000001",
-    "1011111111111000000000000001111111011111000000000000111111111101",
-    "1000000000000000000000000000000000000000000000000000000000000001",
-    "1000000111111111000111111111000111111111000111111111000000000001",
-    "1000000000000000000000000000000000000000000000000000000000000001",
-    "100000000000000P000000000000000000000000000000000000000000000001",
-    "1000000000000000000000000000000000000000000000000000000000000001",
-    "1011111111111000000000000001111111011111000000000000111111111101",
-    "1000000000000000000000000000000000000000000000000000000000000001",
-    "1000000111111111000111111111000111111111000111111111000000000001",
-    "1000000000000000000000000000000000000000000000000000000000000001",
-    "1011111111111000000000000001111111011111000000000000111111111101",
-    "1000000000000000000000000000000000000000000000000000000000000001",
-    "1000000111111111000111111111000111111111000111111111000000000001",
-    "1000000000000000000000000000000000000000000000000000000000000001",
-    "1111111111111111111111111111111111111111111111111111111111111111"
-  ];
+  private levels: { [key: number]: string[] } = {
+    1: [
+      "100000000000000000000000000000000000P000000000000000000000000000000000001",
+      "100000111111110000000000000011111100000000000000111111000000000000000000",
+      "100000100000001100000000000100000100000000000000100000100000000000000000",
+      "000000100000000000000000000100000100000000000000100000100000000000000000",
+      "000000100001100000000000000100000100000000000000100000100000000000000000",
+      "000000111111100000000000000111111100000000000000111111000000000000000000",
+      "000000000000000000000000000000000000000000000000000000000000000000000000"
+    ],
+    2: [
+      "10000000000P000000000000000000000000000000000000000000000000000000000000",
+      "100000000011111111000000000000000000000000000011111000000000000000000000",
+      "000000000000000000000000000000000000000000000000000100000000000000000000",
+      "111100111000011000000000000000000000000000001100001100000000000000000000",
+      "000000111000111000000000000000000000000000011100001100000000000000000000",
+      "000000000000000000000000000000000000000000000000001100000000000000000000",
+      "000000000000000000000000000000000000000000000000000000000000000000000000"
+    ],
+    3: [
+      "100000000000000000000000000000000000000000000000000000000000000000000000",
+      "000000111000011110000000000000000000000000011100000000000000000000000P00",
+      "011100100000001000000000000000000000000000100000111000000000000000000000",
+      "000000100000001000000000000000000000000000100000001000000000000000000000",
+      "001000100000111100000000000000000000000000111000001000000000000000000000",
+      "001000100000000000000000000000000000000000000000001000000000000000000000",
+      "000000000000000000000000000000000000000000000000000000000000000000000000"
+    ],
+    4: [
+      "000000000000000000000000000000000000000000000000000000000000000000000000",
+      "000000000P00000000000000000000000000000000000000000000000000000000000000",
+      "000000000000000000000000000000000000000000000000000000000000000000000000",
+      "000111100000000000000000000000000000000000000000000000000000000000000000",
+      "001000000000000000000000000000000000000000000000000000000000000000000000",
+      "001000000000000000000000000000000000000000000000000000000000000000000000",
+      "000000000000000000000000000000000000000000000000000000000000000000000000"
+    ]
+};
+
+
+  currentLevel: number = 1;
+  mapData: string[] = this.levels[this.currentLevel];
+
+  changeLevel(level: number) {
+    if (this.levels[level]) {
+        this.currentLevel = level;
+
+        this.clearMap(); // 🔥 Solo eliminamos elementos del mapa
+
+        this.mapData = [...this.levels[level]];
+        this.generateMap(); // 🔥 Regeneramos solo el mapa
+
+        // ✅ Reajustar cámara sin afectar escala del jugador
+        this.camera.position.set(0, 0, 10);
+        this.camera.lookAt(0, 0, 0);
+        this.camera.updateProjectionMatrix();
+    }
+}
+
+
+
+  
+  
+private clearMap() {
+  // 🔥 Eliminar todas las paredes del nivel anterior
+  this.walls.forEach(wall => this.scene.remove(wall));
+  this.walls = [];
+
+  // 🔥 Eliminar todos los tanques de oxígeno del nivel anterior
+  this.oxygenTanks.forEach(tank => this.scene.remove(tank));
+  this.oxygenTanks = [];
+
+  // 🔥 Eliminar al jugador si existe
+  if (this.player && this.player.mesh) {
+      this.scene.remove(this.player.mesh);
+      this.player = null as any; // Resetear el jugador
+  }
+
+  // ✅ No eliminamos los planetas ni las estrellas para mantener el fondo intacto
+}
+
+
+  
+  
+  
+  
+  
+  
   
 
 
@@ -142,10 +209,10 @@ export class GameComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.initThreeJS();
-    this.addLights(); // ✅ Agregar luces para los planetas
+    this.addLights(); 
 
     this.createStars();
-    this.createPlanets(); // ✅ Agregar planetas al fondo
+    this.createPlanets(); 
 
     this.generateMap();
     this.animateScene();
@@ -154,11 +221,9 @@ export class GameComponent implements OnInit {
   private animateScene() {
     requestAnimationFrame(() => this.animateScene());
   
-    // Hacer que la cámara siga al jugador
     this.camera.position.set(this.player.mesh.position.x, this.player.mesh.position.y, 10);
     this.camera.lookAt(this.player.mesh.position.x, this.player.mesh.position.y, 0);
   
-    // Animación del fondo de estrellas
     if (this.stars) {
       this.stars.rotation.y += 0.0001; // Más lenta para mejorar el efecto
     }
@@ -166,7 +231,7 @@ export class GameComponent implements OnInit {
     // 🔹 Movimiento más fluido de los planetas
     this.planets.forEach(planet => {
       planet.rotation.y += 0.0001; // Rotación más lenta
-      planet.rotation.x += 0.00005;
+      planet.rotation.x += 0.0005;
   
       // Movimiento más suave en el fondo
       planet.position.x += Math.sin(Date.now() * 0.00002) * 0.005;
@@ -183,21 +248,21 @@ export class GameComponent implements OnInit {
   private initThreeJS() {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x000000);
-  
+
     const aspectRatio = window.innerWidth / window.innerHeight;
-    const zoom = 7; // Ajusta este valor según necesites
+    const zoom = Math.max(7, this.mapData.length / 5); // Ajusta según tamaño del mapa
     this.camera = new THREE.OrthographicCamera(
-      -zoom * aspectRatio, zoom * aspectRatio, zoom, -zoom, 0.1, 1000
+        -zoom * aspectRatio, zoom * aspectRatio, zoom, -zoom, 0.1, 1000
     );
     this.camera.position.set(0, 0, 10);
     this.camera.lookAt(0, 0, 0);
-  
+
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvasRef.nativeElement, alpha: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(window.devicePixelRatio); // ✅ Asegura calidad en pantallas retina
-  
-    document.body.appendChild(this.renderer.domElement);
-  }
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+}
+
+
   
   private addLights() {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Luz ambiental suave
@@ -253,6 +318,7 @@ export class GameComponent implements OnInit {
         }
     }
 }
+
 private loadGIFTexture(url: string): THREE.Texture {
   const image = document.createElement("img");
   image.src = url;
@@ -268,16 +334,22 @@ private loadGIFTexture(url: string): THREE.Texture {
 
 
 private addPlayer(x: number, y: number, geometry: THREE.PlaneGeometry, textures: { [key: string]: THREE.Texture[] }, controls: any) {
-  const material = new THREE.MeshBasicMaterial({ map: textures['right'][0], transparent: true });
+  const material = new THREE.MeshBasicMaterial({ 
+      map: textures['right'][0], 
+      transparent: true 
+  });
+
   const player = new THREE.Mesh(geometry, material);
   player.position.set(x, y, 0);
 
-  // 🔹 Asegurar que siempre mire hacia la cámara
-  player.lookAt(this.camera.position);
+  // 🔥 Mantén un tamaño fijo para evitar distorsión
+  const scaleFactor = 1; // Valor fijo para evitar cambios de tamaño
+  player.scale.set(scaleFactor, scaleFactor, 1);
 
   this.scene.add(player);
   this.player = { mesh: player, controls, textures, currentTextureIndex: 0, direction: 'right' };
 }
+
 
 
   private addWall(x: number, y: number, geometry: THREE.PlaneGeometry, material: THREE.MeshBasicMaterial) {
@@ -290,12 +362,15 @@ private addPlayer(x: number, y: number, geometry: THREE.PlaneGeometry, textures:
   private addOxygenTank(x: number, y: number, geometry: THREE.PlaneGeometry, material: THREE.MeshBasicMaterial) {
     const oxygen = new THREE.Mesh(geometry, material);
     oxygen.position.set(x, y, 0);
-    
+
     // 🔹 Hacer que siempre mire a la cámara
     oxygen.lookAt(this.camera.position);
-    
+
     this.scene.add(oxygen);
+    this.oxygenTanks.push(oxygen); // 🔹 Guardarlo en la lista para futura eliminación
 }
+
+  
 
 
   @HostListener('document:keydown', ['$event'])
@@ -344,18 +419,18 @@ private addPlayer(x: number, y: number, geometry: THREE.PlaneGeometry, textures:
   }
 
   @HostListener('window:resize', ['$event'])
-onResize() {
-  const aspectRatio = window.innerWidth / window.innerHeight;
-  const zoom = 7;
-
-  this.camera.left = -zoom * aspectRatio;
-  this.camera.right = zoom * aspectRatio;
-  this.camera.top = zoom;
-  this.camera.bottom = -zoom;
-  this.camera.updateProjectionMatrix();
-
-  this.renderer.setSize(window.innerWidth, window.innerHeight);
-}
+  onResize() {
+      const aspectRatio = window.innerWidth / window.innerHeight;
+      const zoom = 7; // 🔥 Fijamos un zoom estable
+      this.camera.left = -zoom * aspectRatio;
+      this.camera.right = zoom * aspectRatio;
+      this.camera.top = zoom;
+      this.camera.bottom = -zoom;
+      this.camera.updateProjectionMatrix();
+  
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+  
 
 @HostListener('wheel', ['$event'])
 onMouseWheel(event: WheelEvent) {
