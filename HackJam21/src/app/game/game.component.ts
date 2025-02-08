@@ -53,17 +53,18 @@ export class GameComponent implements OnInit {
 
   // Mapa con un solo jugador (P)
   private mapData: string[] = [
-    "1111111111111111111111",
-    "110000000000000O00001",
-    "101001010010000010100",
-    "101001001010101000P100",
-    "110000000O00O00000001",
-    "100000000000000000000",
-    "100000000000000000000",
-    "1000000000000000000000101",
-    "10000000000000000000010",
-    "1111111111111111111111"
+    "111111111111111111111111111111111111",
+    "100000000000000000000000000000000001",
+    "100011110000110000111100011000011001",
+    "100000000000000O00000000000000000001",
+    "100011110000111000011100011000011001",
+    "100000000000000000000000000000000001",
+    "100000000000000000000000000000000001",
+    "10000000000P000000000000000000000001",
+    "100000000000000000000000000000000001",
+    "111111111111111111111111111111110111"
   ];
+
 
   constructor() {}
 
@@ -74,40 +75,41 @@ export class GameComponent implements OnInit {
     this.animateScene();
   }
 
-  private animateScene() {
-    requestAnimationFrame(() => this.animateScene());
+ private animateScene() {
+  requestAnimationFrame(() => this.animateScene());
 
-    // Animación del fondo de estrellas
-    if (this.stars) {
-      this.stars.rotation.y += 0.0005;
-    }
+  // Hacer que la cámara siga al jugador
+  this.camera.position.set(this.player.mesh.position.x, this.player.mesh.position.y, 10);
+  this.camera.lookAt(this.player.mesh.position.x, this.player.mesh.position.y, 0);
 
-    this.renderer.render(this.scene, this.camera);
+  // Animación del fondo de estrellas
+  if (this.stars) {
+    this.stars.rotation.y += 0.0005;
   }
+
+  this.renderer.render(this.scene, this.camera);
+}
+
 
   private initThreeJS() {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x000000);
-
-    // 📌 Cámara ortográfica para una vista 2D
+  
     const aspectRatio = window.innerWidth / window.innerHeight;
-    const zoom = 7; // Ajusta este valor para modificar la escala
+    const zoom = 7; // Ajusta este valor según necesites
     this.camera = new THREE.OrthographicCamera(
-        -zoom * aspectRatio, // Izquierda
-        zoom * aspectRatio,  // Derecha
-        zoom,  // Arriba
-        -zoom, // Abajo
-        0.1,   // Near
-        1000   // Far
+      -zoom * aspectRatio, zoom * aspectRatio, zoom, -zoom, 0.1, 1000
     );
-
-    this.camera.position.set(0, 0, 10); // Eleva la cámara para que mire hacia abajo
-    this.camera.lookAt(0, 0, 0); // Apunta al centro de la escena
-
+    this.camera.position.set(0, 0, 10);
+    this.camera.lookAt(0, 0, 0);
+  
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvasRef.nativeElement, alpha: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setPixelRatio(window.devicePixelRatio); // ✅ Asegura calidad en pantallas retina
+  
     document.body.appendChild(this.renderer.domElement);
-}
+  }
+  
 
 
   private createStars() {
@@ -221,5 +223,20 @@ private addPlayer(x: number, y: number, geometry: THREE.PlaneGeometry, textures:
       return distance < (this.collisionRadius + collisionMargin); // 🔹 Considera el margen
     });
   }
+
+  @HostListener('window:resize', ['$event'])
+onResize() {
+  const aspectRatio = window.innerWidth / window.innerHeight;
+  const zoom = 7;
+
+  this.camera.left = -zoom * aspectRatio;
+  this.camera.right = zoom * aspectRatio;
+  this.camera.top = zoom;
+  this.camera.bottom = -zoom;
+  this.camera.updateProjectionMatrix();
+
+  this.renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
   
 }
