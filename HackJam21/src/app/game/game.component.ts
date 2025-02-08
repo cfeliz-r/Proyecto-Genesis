@@ -126,7 +126,7 @@ export class GameComponent implements OnInit {
         if (char === '1') {
           this.addWall(posX, posY, wallGeometry, wallMaterial);
         } else if (char === 'P') {
-          this.addPlayer(posX, posY, playerGeometry, this.playerTextures, { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' });
+          this.addPlayer(posX, posY, playerGeometry, this.playerTextures, { up: 'w', down: 's', left: 'a', right: 'd' });
         } else if (char === 'O') {
           this.addOxygenTank(posX, posY, oxygenGeometry, oxygenMaterial);
         }
