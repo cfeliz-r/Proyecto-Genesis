@@ -156,35 +156,43 @@ export class GameComponent implements OnInit {
   }
 
   @HostListener('document:keydown', ['$event'])
-  handleKeyDown(event: KeyboardEvent) {
-    const speed = 0.5;
-    let newX = this.player.mesh.position.x;
-    let newY = this.player.mesh.position.y;
+handleKeyDown(event: KeyboardEvent) {
+  const speed = 0.5;
+  let newX = this.player.mesh.position.x;
+  let newY = this.player.mesh.position.y;
 
-    let newDirection = this.player.direction;
+  let newDirection = this.player.direction;
 
-    if (event.key === this.player.controls.right) {
-      newX += speed;
-      newDirection = 'right';
-      this.player.mesh.scale.x = 1; 
-    }
-    if (event.key === this.player.controls.left) {
-      newX -= speed;
-      newDirection = 'left';
-      this.player.mesh.scale.x = -1; 
-    }
-    if (event.key === this.player.controls.up) {
-      newY += speed;
-      newDirection = 'up';
-    }
-    if (event.key === this.player.controls.down) {
-      newY -= speed;
-      newDirection = 'down';
-    }
+  if (event.key === this.player.controls.right) {
+    newX += speed;
+    newDirection = 'right';
+    this.player.mesh.scale.x = 1; 
+  }
+  if (event.key === this.player.controls.left) {
+    newX -= speed;
+    newDirection = 'left';
+    this.player.mesh.scale.x = -1; 
+  }
+  if (event.key === this.player.controls.up) {
+    newY += speed;
+    newDirection = 'up';
+  }
+  if (event.key === this.player.controls.down) {
+    newY -= speed;
+    newDirection = 'down';
+  }
 
+  if (!this.isCollidingWithWall(newX, newY)) {
     this.player.currentTextureIndex = (this.player.currentTextureIndex + 1) % this.player.textures[newDirection].length;
     (this.player.mesh.material as THREE.MeshBasicMaterial).map = this.player.textures[newDirection][this.player.currentTextureIndex];
+    this.player.mesh.position.set(newX, newY, 0);
+  }
+}
 
-    this.player.mesh.position.set(newX, newY, 0);
-  }
+private isCollidingWithWall(x: number, y: number): boolean {
+  return this.walls.some(wall => {
+    const distance = Math.sqrt(Math.pow(wall.position.x - x, 2) + Math.pow(wall.position.y - y, 2));
+    return distance < this.collisionRadius;
+  });
+}
 }
